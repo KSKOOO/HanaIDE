@@ -1,0 +1,4 @@
+interface:
+  display_name: "Polished Web UI"
+  short_description: "Design guidance for polished responsive frontend UIs."
+  default_prompt: "Use $polished-web-ui to build a polished, responsive frontend interface."

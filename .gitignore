@@ -1,0 +1,76 @@
+# User data
+/agents/
+/user/
+!skills2set/hana-plugin-creator/agents/
+!skills2set/hana-plugin-creator/agents/**
+!skills2set/office-documents/agents/
+!skills2set/office-documents/agents/**
+
+# Private notes and generated planning docs
+.docs/
+CLAUDE.md
+AGENTS.md
+docs/superpowers/
+.superpowers/
+archived/
+devlog/
+research/
+handoff-*.md
+TODO.md
+reviews/
+
+# Generated image scratch files
+**/jimeng-*.png
+
+# Build artifacts and caches
+dist/
+dist-server/
+dist-server-bundle/
+dist-computer-use/
+desktop/main.bundle.cjs
+desktop/preload.bundle.cjs
+desktop/dist-renderer/
+desktop/native/**/.build/
+.cache/
+vendor/
+inbox/
+
+# Runtime dependencies
+node_modules/
+.pi/
+
+# IDE and local tool state
+.claude/
+.agents/skills/
+.codex/
+*.code-workspace
+
+# Temporary files
+tmp/
+test-results/
+__pycache__/
+*.pyc
+*.bak
+/index.html
+homepage/
+desktop/src/react/animation-mockup/
+
+# Environment variables and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.crt
+credentials.json
+secrets.yaml
+secrets.json
+auth.json
+
+# Logs and local databases
+*.log
+logs/
+*.db
+
+# Operating system files
+.DS_Store

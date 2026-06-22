@@ -1,0 +1,126 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  padding: 18px;
+  gap: 14px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.header p {
+  margin: 6px 0 0;
+  max-width: 780px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.primaryButton,
+.secondaryButton {
+  height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.primaryButton {
+  background: var(--accent-color);
+  color: var(--accent-contrast);
+}
+
+.secondaryButton {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.6;
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(132px, 1fr));
+  gap: 10px;
+}
+
+.statusGrid div {
+  min-height: 58px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+}
+
+.statusGrid span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.statusGrid strong {
+  display: block;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.error {
+  border: 1px solid var(--danger-border, #9f3a38);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--danger-text, #9f3a38);
+  background: var(--danger-bg, rgba(159, 58, 56, 0.08));
+}
+
+.mountFrame {
+  flex: 1;
+  min-height: 320px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 760px) {
+  .header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+}
