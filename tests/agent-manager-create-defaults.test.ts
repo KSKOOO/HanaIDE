@@ -68,6 +68,11 @@ const DEFAULT_CODING_SKILLS = [
   "karpathy-guidelines",
   "polished-web-ui",
   "supeepowers",
+  "code-review",
+  "create-project",
+  "doc-writer",
+  "frontend-design",
+  "skill-installer",
 ];
 
 // ── Test suite ─────────────────────────────────────────────────

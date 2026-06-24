@@ -332,6 +332,89 @@ option,
     background: var(--overlay-light);
 }
 
+.tb-menu-root {
+    position: relative;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+}
+
+.tb-menu-panel,
+.tb-submenu {
+    position: absolute;
+    z-index: 4000;
+    min-width: 188px;
+    padding: 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-soft);
+    color: var(--text);
+}
+
+.tb-menu-panel {
+    top: calc(100% - 2px);
+    left: 0;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+.tb-submenu {
+    top: -6px;
+    left: calc(100% - 2px);
+    display: none;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+.tb-menu-item-wrap {
+    position: relative;
+}
+
+.tb-menu-item-wrap:hover > .tb-submenu {
+    display: block;
+}
+
+.tb-menu-item-wrap.separated {
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid var(--overlay-light);
+}
+
+.tb-menu-item {
+    width: 100%;
+    min-height: 28px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: default;
+    pointer-events: auto;
+    -webkit-app-region: no-drag;
+}
+
+.tb-menu-item:hover:not(:disabled),
+.tb-menu-item:focus-visible:not(:disabled) {
+    background: var(--overlay-light);
+}
+
+.tb-menu-item:disabled {
+    color: var(--text-muted);
+    opacity: 0.55;
+}
+
+.tb-menu-caret {
+    color: var(--text-muted);
+}
+
 /* Windows/Linux：左侧不让位，右侧让位给 window controls */
 html[data-platform="win32"] .tb-toggle-left,
 html[data-platform="linux"] .tb-toggle-left {
@@ -342,7 +425,7 @@ html[data-platform="win32"] .tb-menu-bar,
 html[data-platform="linux"] .tb-menu-bar {
     left: 42px;
     max-width: calc(100% - 240px);
-    overflow: hidden;
+    overflow: visible;
 }
 html[data-platform="win32"] .tb-toggle-right,
 html[data-platform="linux"] .tb-toggle-right {

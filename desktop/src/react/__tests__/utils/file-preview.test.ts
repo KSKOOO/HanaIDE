@@ -133,4 +133,30 @@ describe('file-preview IPC error handling', () => {
       sourceRootPath: '/workspace',
     }));
   });
+
+  it('opens Windows script files as editable code previews', async () => {
+    (window as any).platform.readFile.mockResolvedValueOnce('@echo off\r\necho build');
+    await expect(openFilePreview('/workspace/build.bat', 'build.bat', 'bat', { origin: 'desk' })).resolves.toBeUndefined();
+    expect(mocks.openPreview).toHaveBeenLastCalledWith(expect.objectContaining({
+      id: 'file-/workspace/build.bat',
+      type: 'code',
+      title: 'build.bat',
+      content: '@echo off\r\necho build',
+      filePath: '/workspace/build.bat',
+      ext: 'bat',
+      language: 'bat',
+    }));
+
+    (window as any).platform.readFile.mockResolvedValueOnce('Write-Host "deploy"');
+    await expect(openFilePreview('/workspace/deploy.ps1', 'deploy.ps1', 'ps1', { origin: 'desk' })).resolves.toBeUndefined();
+    expect(mocks.openPreview).toHaveBeenLastCalledWith(expect.objectContaining({
+      id: 'file-/workspace/deploy.ps1',
+      type: 'code',
+      title: 'deploy.ps1',
+      content: 'Write-Host "deploy"',
+      filePath: '/workspace/deploy.ps1',
+      ext: 'ps1',
+      language: 'ps1',
+    }));
+  });
 });

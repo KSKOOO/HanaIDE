@@ -6,6 +6,7 @@ export const PREVIEWABLE_EXTS: Record<string, string> = {
   js: 'code', ts: 'code', jsx: 'code', tsx: 'code',
   py: 'code', css: 'code', json: 'code', yaml: 'code', yml: 'code',
   xml: 'code', sql: 'code', sh: 'code', bash: 'code',
+  bat: 'code', cmd: 'code', ps: 'code', ps1: 'code', psm1: 'code', psd1: 'code',
   txt: 'code',
   c: 'code', cpp: 'code', h: 'code', java: 'code',
   rs: 'code', go: 'code', rb: 'code', php: 'code',

@@ -11,7 +11,14 @@ import { archiveSession, createNewSession, switchSession } from '../../stores/se
 import { createProjectFromTemplate } from '../../stores/project-templates';
 
 vi.mock('../../components/PreviewEditor', () => ({
-  PreviewEditor: () => <div data-testid="coding-preview-editor" />,
+  PreviewEditor: ({ content, mode, language }: { content?: string; mode?: string; language?: string | null }) => (
+    <div
+      data-testid="coding-preview-editor"
+      data-content={content || ''}
+      data-mode={mode || ''}
+      data-language={language || ''}
+    />
+  ),
 }));
 
 vi.mock('../../components/chat/ChatArea', () => ({
@@ -239,6 +246,41 @@ describe('CodingModePage', () => {
 
     await waitFor(() => expect(screen.queryByRole('tab', { name: /package\.json/ })).not.toBeInTheDocument());
     expect(screen.getByRole('tab', { name: /README\.md/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('opens Windows shell scripts as editable coding documents', async () => {
+    window.platform = {
+      readFileSnapshot: vi.fn(async (path: string) => ({
+        content: path.endsWith('deploy.ps1') ? 'Write-Host "deploy"' : '@echo off\r\necho build',
+        version: { mtimeMs: 1, size: 1 },
+      })),
+    } as unknown as typeof window.platform;
+    useStore.setState({
+      deskFiles: [
+        { name: 'build.bat', isDir: false, size: 24, mtime: '2026-06-21T00:00:00.000Z' },
+        { name: 'deploy.ps1', isDir: false, size: 20, mtime: '2026-06-21T00:00:00.000Z' },
+      ],
+      deskTreeFilesByPath: {
+        '': [
+          { name: 'build.bat', isDir: false, size: 24, mtime: '2026-06-21T00:00:00.000Z' },
+          { name: 'deploy.ps1', isDir: false, size: 20, mtime: '2026-06-21T00:00:00.000Z' },
+        ],
+      },
+    } as never);
+
+    render(<CodingModePage />);
+
+    fireEvent.click(screen.getByRole('treeitem', { name: /build\.bat/ }));
+    expect(await screen.findByRole('tab', { name: /build\.bat/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('coding-preview-editor')).toHaveAttribute('data-content', '@echo off\r\necho build');
+    expect(screen.getByTestId('coding-preview-editor')).toHaveAttribute('data-mode', 'code');
+    expect(screen.getByTestId('coding-preview-editor')).toHaveAttribute('data-language', 'bat');
+
+    fireEvent.click(screen.getByRole('treeitem', { name: /deploy\.ps1/ }));
+    expect(await screen.findByRole('tab', { name: /deploy\.ps1/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('coding-preview-editor')).toHaveAttribute('data-content', 'Write-Host "deploy"');
+    expect(screen.getByTestId('coding-preview-editor')).toHaveAttribute('data-mode', 'code');
+    expect(screen.getByTestId('coding-preview-editor')).toHaveAttribute('data-language', 'ps1');
   });
 
   it('opens a folder from the coding explorer toolbar and resets editor tabs', async () => {

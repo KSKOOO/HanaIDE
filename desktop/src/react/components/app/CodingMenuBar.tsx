@@ -1,162 +1,201 @@
-import { useCallback, useMemo, useState } from 'react';
-import { applyFolder, promptAndCreateSshStudioWorkspace } from '../../stores/desk-actions';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { openSettingsModal } from '../../stores/settings-modal-actions';
-import { ContextMenu, type ContextMenuItem } from '../../ui';
+import { promptAndCreateSshStudioWorkspace } from '../../stores/desk-actions';
 
 interface CodingMenuBarProps {
-  onToggleSidebar: () => void;
-  onToggleJian: () => void;
+  onToggleSidebar?: () => void;
+  onToggleJian?: () => void;
 }
 
-interface MenuState {
+interface MenuItem {
+  labelKey: string;
+  action?: () => void;
+  disabled?: boolean;
+  separatorBefore?: boolean;
+  children?: MenuItem[];
+}
+
+interface MenuGroup {
   id: string;
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
+  labelKey: string;
+  items: MenuItem[];
 }
 
-const t = (key: string, vars?: Record<string, string | number>) => window.t?.(key, vars) ?? key;
-
-function dispatchCodingCommand(action: string, command?: string) {
-  window.dispatchEvent(new CustomEvent('hana:coding-command', {
-    detail: command ? { action, command } : { action },
-  }));
+function tr(key: string) {
+  return window.t?.(key) || key;
 }
 
-function editCommand(command: string) {
-  try {
-    document.execCommand(command);
-  } catch {
-    // Browser support varies; failed edit commands should not break the menu.
-  }
+function emitCodingCommand(action: string, command?: string) {
+  window.dispatchEvent(new CustomEvent('hana:coding-command', { detail: { action, command } }));
+}
+
+function execDocumentCommand(command: string) {
+  document.execCommand?.(command);
+}
+
+function runTerminalCommand(command: string) {
+  emitCodingCommand('terminal.run', command);
 }
 
 export function CodingMenuBar({ onToggleSidebar, onToggleJian }: CodingMenuBarProps) {
-  const [menu, setMenu] = useState<MenuState | null>(null);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  const openFolder = useCallback(async () => {
-    const folder = await window.platform?.selectFolder?.();
-    if (folder) await applyFolder(folder);
-  }, []);
+  useEffect(() => {
+    if (!openMenu) return undefined;
+    const close = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpenMenu(null);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpenMenu(null);
+    };
+    document.addEventListener('pointerdown', close, true);
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      document.removeEventListener('pointerdown', close, true);
+      document.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [openMenu]);
 
-  const menus = useMemo(() => [
+  const menus = useMemo<MenuGroup[]>(() => [
     {
       id: 'file',
-      label: t('titlebar.menu.file'),
+      labelKey: 'titlebar.menu.file',
       items: [
-        { label: t('titlebar.menu.openFolder'), action: () => { void openFolder(); } },
-        { label: t('titlebar.menu.connectSshWorkspace'), action: () => { void promptAndCreateSshStudioWorkspace(); } },
+        { labelKey: 'titlebar.menu.openFolder', action: () => emitCodingCommand('workspace.openFolder') },
+        { labelKey: 'titlebar.menu.connectSshWorkspace', action: () => { void promptAndCreateSshStudioWorkspace(); } },
         {
-          label: t('titlebar.menu.newProjectFromTemplate'),
+          labelKey: 'titlebar.menu.newProjectFromTemplate',
           children: [
-            { label: t('titlebar.menu.templateBasicWeb'), action: () => dispatchCodingCommand('project.createTemplate', 'basic-web') },
-            { label: t('titlebar.menu.templateDesktopApp'), action: () => dispatchCodingCommand('project.createTemplate', 'desktop-app') },
-            { label: t('titlebar.menu.templateAiApp'), action: () => dispatchCodingCommand('project.createTemplate', 'ai-app') },
+            { labelKey: 'titlebar.menu.templateBasicWeb', action: () => emitCodingCommand('project.createTemplate', 'basic-web') },
+            { labelKey: 'titlebar.menu.templateDesktopApp', action: () => emitCodingCommand('project.createTemplate', 'desktop-app') },
+            { labelKey: 'titlebar.menu.templateAiApp', action: () => emitCodingCommand('project.createTemplate', 'ai-app') },
           ],
         },
-        { divider: true },
-        { label: t('titlebar.menu.settings'), action: () => openSettingsModal('general') },
+        { labelKey: 'titlebar.menu.settings', separatorBefore: true, action: () => openSettingsModal() },
       ],
     },
     {
       id: 'edit',
-      label: t('titlebar.menu.edit'),
+      labelKey: 'titlebar.menu.edit',
       items: [
-        { label: t('titlebar.menu.undo'), action: () => editCommand('undo') },
-        { label: t('titlebar.menu.redo'), action: () => editCommand('redo') },
-        { divider: true },
-        { label: t('titlebar.menu.cut'), action: () => editCommand('cut') },
-        { label: t('titlebar.menu.copy'), action: () => editCommand('copy') },
-        { label: t('titlebar.menu.paste'), action: () => editCommand('paste') },
+        { labelKey: 'titlebar.menu.undo', action: () => execDocumentCommand('undo') },
+        { labelKey: 'titlebar.menu.redo', action: () => execDocumentCommand('redo') },
+        { labelKey: 'titlebar.menu.cut', separatorBefore: true, action: () => execDocumentCommand('cut') },
+        { labelKey: 'titlebar.menu.copy', action: () => execDocumentCommand('copy') },
+        { labelKey: 'titlebar.menu.paste', action: () => execDocumentCommand('paste') },
       ],
     },
     {
       id: 'selection',
-      label: t('titlebar.menu.selection'),
+      labelKey: 'titlebar.menu.selection',
       items: [
-        { label: t('titlebar.menu.selectAll'), action: () => editCommand('selectAll') },
+        { labelKey: 'titlebar.menu.selectAll', action: () => execDocumentCommand('selectAll') },
       ],
     },
     {
       id: 'view',
-      label: t('titlebar.menu.view'),
+      labelKey: 'titlebar.menu.view',
       items: [
-        { label: t('titlebar.menu.explorer'), action: () => dispatchCodingCommand('view.explorer') },
-        { label: t('titlebar.menu.search'), action: () => dispatchCodingCommand('view.search') },
-        { label: t('titlebar.menu.sourceControl'), action: () => dispatchCodingCommand('view.sourceControl') },
-        { label: t('titlebar.menu.extensions'), action: () => dispatchCodingCommand('view.extensions') },
-        { divider: true },
-        { label: t('titlebar.menu.toggleSidebar'), action: onToggleSidebar },
-        { label: t('titlebar.menu.toggleAssistant'), action: onToggleJian },
+        { labelKey: 'titlebar.menu.explorer', action: () => emitCodingCommand('view.explorer') },
+        { labelKey: 'titlebar.menu.search', action: () => emitCodingCommand('view.search') },
+        { labelKey: 'titlebar.menu.sourceControl', action: () => emitCodingCommand('view.sourceControl') },
+        { labelKey: 'titlebar.menu.extensions', action: () => emitCodingCommand('view.extensions') },
+        { labelKey: 'titlebar.menu.toggleSidebar', separatorBefore: true, action: onToggleSidebar },
+        { labelKey: 'titlebar.menu.toggleAssistant', action: onToggleJian },
       ],
     },
     {
       id: 'go',
-      label: t('titlebar.menu.go'),
+      labelKey: 'titlebar.menu.go',
       items: [
-        { label: t('titlebar.menu.goExplorer'), action: () => dispatchCodingCommand('view.explorer') },
-        { label: t('titlebar.menu.goSearch'), action: () => dispatchCodingCommand('view.search') },
-        { label: t('titlebar.menu.goExtensions'), action: () => dispatchCodingCommand('view.extensions') },
+        { labelKey: 'titlebar.menu.goExplorer', action: () => emitCodingCommand('view.explorer') },
+        { labelKey: 'titlebar.menu.goSearch', action: () => emitCodingCommand('view.search') },
+        { labelKey: 'titlebar.menu.goExtensions', action: () => emitCodingCommand('view.extensions') },
       ],
     },
     {
       id: 'run',
-      label: t('titlebar.menu.run'),
+      labelKey: 'titlebar.menu.run',
       items: [
-        { label: t('titlebar.menu.startTerminal'), action: () => dispatchCodingCommand('terminal.start') },
-        { label: t('titlebar.menu.gitStatus'), action: () => dispatchCodingCommand('terminal.run', 'git status --short --branch') },
-        { label: t('titlebar.menu.npmTest'), action: () => dispatchCodingCommand('terminal.run', 'npm test') },
-        { label: t('titlebar.menu.npmBuild'), action: () => dispatchCodingCommand('terminal.run', 'npm run build') },
+        { labelKey: 'titlebar.menu.startTerminal', action: () => emitCodingCommand('terminal.start') },
+        { labelKey: 'titlebar.menu.gitStatus', action: () => runTerminalCommand('git status --short') },
+        { labelKey: 'titlebar.menu.npmTest', action: () => runTerminalCommand('npm test') },
+        { labelKey: 'titlebar.menu.npmBuild', action: () => runTerminalCommand('npm run build:renderer -- --logLevel error') },
       ],
     },
     {
       id: 'terminal',
-      label: t('titlebar.menu.terminal'),
+      labelKey: 'titlebar.menu.terminal',
       items: [
-        { label: t('titlebar.menu.newTerminal'), action: () => dispatchCodingCommand('terminal.start') },
-        { label: t('titlebar.menu.closeTerminal'), action: () => dispatchCodingCommand('terminal.close') },
+        { labelKey: 'titlebar.menu.newTerminal', action: () => emitCodingCommand('terminal.start') },
+        { labelKey: 'titlebar.menu.closeTerminal', action: () => emitCodingCommand('terminal.close') },
       ],
     },
     {
       id: 'help',
-      label: t('titlebar.menu.help'),
+      labelKey: 'titlebar.menu.help',
       items: [
-        { label: t('titlebar.menu.about'), action: () => openSettingsModal('about') },
+        { labelKey: 'titlebar.menu.about', action: () => openSettingsModal('about') },
       ],
     },
-  ], [onToggleJian, onToggleSidebar, openFolder]);
+  ], [onToggleJian, onToggleSidebar]);
 
-  const openMenu = useCallback((event: React.MouseEvent<HTMLButtonElement>, id: string, items: ContextMenuItem[]) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setMenu({
-      id,
-      items,
-      position: { x: rect.left, y: rect.bottom + 4 },
-    });
-  }, []);
+  const activateItem = (item: MenuItem) => {
+    if (item.disabled || item.children?.length) return;
+    setOpenMenu(null);
+    item.action?.();
+  };
+
+  const renderItem = (item: MenuItem, index: number) => (
+    <div key={`${item.labelKey}-${index}`} className={item.separatorBefore ? 'tb-menu-item-wrap separated' : 'tb-menu-item-wrap'}>
+      <button
+        type="button"
+        role="menuitem"
+        className="tb-menu-item"
+        disabled={item.disabled}
+        onClick={() => activateItem(item)}
+      >
+        <span>{tr(item.labelKey)}</span>
+        {item.children?.length ? <span className="tb-menu-caret">{'>'}</span> : null}
+      </button>
+      {item.children?.length ? (
+        <div className="tb-submenu" role="menu">
+          {item.children.map(renderItem)}
+        </div>
+      ) : null}
+    </div>
+  );
 
   return (
-    <nav className="tb-menu-bar" aria-label={t('titlebar.menu.label')}>
-      {menus.map(item => (
-        <button
-          key={item.id}
-          type="button"
-          className={`tb-menu-button${menu?.id === item.id ? ' active' : ''}`}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={(event) => openMenu(event, item.id, item.items)}
-          onMouseEnter={(event) => {
-            if (menu) openMenu(event, item.id, item.items);
-          }}
-        >
-          {item.label}
-        </button>
-      ))}
-      {menu && (
-        <ContextMenu
-          items={menu.items}
-          position={menu.position}
-          onClose={() => setMenu(null)}
-        />
-      )}
-    </nav>
+    <div ref={rootRef} className="tb-menu-bar" role="menubar" aria-label={tr('titlebar.menu.label')}>
+      {menus.map(menu => {
+        const open = openMenu === menu.id;
+        return (
+          <div key={menu.id} className="tb-menu-root">
+            <button
+              type="button"
+              className={`tb-menu-button${open ? ' active' : ''}`}
+              role="menuitem"
+              aria-haspopup="menu"
+              aria-expanded={open}
+              onClick={() => setOpenMenu(prev => prev === menu.id ? null : menu.id)}
+              onMouseEnter={() => {
+                if (openMenu) setOpenMenu(menu.id);
+              }}
+            >
+              {tr(menu.labelKey)}
+            </button>
+            {open ? (
+              <div className="tb-menu-panel" role="menu">
+                {menu.items.map(renderItem)}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
   );
 }

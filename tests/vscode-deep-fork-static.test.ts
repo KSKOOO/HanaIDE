@@ -3,9 +3,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const vscodeRoot = "D:/hanaide/vscode-1.125.0";
+const hasVscodeFork = fs.existsSync(path.join(vscodeRoot, "product.json"));
 const read = (...parts: string[]) => fs.readFileSync(path.join(vscodeRoot, ...parts), "utf8");
 
-describe("VSCode deep fork coding mode", () => {
+describe.skipIf(!hasVscodeFork)("VSCode deep fork coding mode", () => {
   it("brands product.json as the OpenHanako coding shell with VSCode gallery enabled", () => {
     const product = JSON.parse(read("product.json"));
 

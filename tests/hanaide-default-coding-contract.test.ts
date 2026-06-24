@@ -10,6 +10,11 @@ const DEFAULT_CODING_SKILLS = [
   "karpathy-guidelines",
   "polished-web-ui",
   "supeepowers",
+  "code-review",
+  "create-project",
+  "doc-writer",
+  "frontend-design",
+  "skill-installer",
 ];
 
 function readText(relPath: string) {
@@ -19,6 +24,13 @@ function readText(relPath: string) {
 function readSkillMeta(skillName: string) {
   const content = readText(path.join("skills2set", skillName, "SKILL.md"));
   return parseSkillMetadata(content, skillName);
+}
+
+function bundledSkillNames() {
+  return fs.readdirSync(path.join(root, "skills2set"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
 }
 
 describe("HanaIDE default coding contract", () => {
@@ -39,32 +51,23 @@ describe("HanaIDE default coding contract", () => {
       });
     }
 
-    for (const skillName of ["hana-plugin-creator", "quiet-musing", "skill-creator", "user-guide"]) {
+    for (const skillName of ["hana-plugin-creator", "skill-creator"]) {
       expect(readSkillMeta(skillName).defaultEnabled).toBe(false);
     }
   });
 
-  it("does not expose legacy HanaAgent naming in bundled skill guides", () => {
-    for (const skillName of ["user-guide", "hana-plugin-creator"]) {
-      const content = readText(path.join("skills2set", skillName, "SKILL.md"));
-      expect(content).toContain("HanaIDE");
-      expect(content).not.toContain("HanaAgent");
-    }
+  it("keeps non-coding starter skills out of the bundled defaults while retaining skill installation", () => {
+    expect(bundledSkillNames()).not.toContain("office-documents");
+    expect(bundledSkillNames()).not.toContain("quiet-musing");
+    expect(bundledSkillNames()).not.toContain("user-guide");
+    expect(fs.existsSync(path.join(root, "skills2set", "skill-installer", "SKILL.md"))).toBe(true);
   });
 
-  it("keeps the user guide focused on coding workflows", () => {
-    const content = readText(path.join("skills2set", "user-guide", "SKILL.md"));
-
-    expect(content).toContain("编程模式用户说明书");
-    expect(content).toContain("打开项目文件夹");
-    expect(content).toContain("多标签");
-    expect(content).toContain("终端");
-    expect(content).toContain("测试");
-    expect(content).toContain("编程助手");
-    expect(content).not.toContain("频道");
-    expect(content).not.toContain("Telegram");
-    expect(content).not.toContain("微信");
-    expect(content).not.toContain("OpenClaw");
+  it("does not expose legacy HanaAgent naming in bundled skill guides", () => {
+    for (const skillName of bundledSkillNames()) {
+      const content = readText(path.join("skills2set", skillName, "SKILL.md"));
+      expect(content).not.toContain("HanaAgent");
+    }
   });
 
   it("uses programming-focused default prompt templates", () => {

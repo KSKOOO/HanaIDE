@@ -4,11 +4,12 @@ import { describe, expect, it } from "vitest";
 
 const openHanakoRoot = process.cwd();
 const vscodeRoot = path.resolve(openHanakoRoot, "..", "vscode-1.125.0");
+const hasVscodeFork = fs.existsSync(path.join(vscodeRoot, "product.json"));
 
 const readOpenHanako = (...parts: string[]) => fs.readFileSync(path.join(openHanakoRoot, ...parts), "utf8");
 const readVscode = (...parts: string[]) => fs.readFileSync(path.join(vscodeRoot, ...parts), "utf8");
 
-describe("OpenHanako Code deep-fork Hana integration", () => {
+describe.skipIf(!hasVscodeFork)("OpenHanako Code deep-fork Hana integration", () => {
   it("serves the full desktop renderer through an authenticated web app route", () => {
     const staticRoute = readOpenHanako("server", "routes", "mobile-static.ts");
     const routeSecurity = readOpenHanako("server", "http", "route-security.ts");

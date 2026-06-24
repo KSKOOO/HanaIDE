@@ -65,7 +65,7 @@ search:
 
 # Skills（per-agent 技能开关）
 skills:
-  enabled: ["hanaide-coding", "karpathy-guidelines", "polished-web-ui", "supeepowers"] # 默认启用编程工作流技能包
+  enabled: ["hanaide-coding", "karpathy-guidelines", "polished-web-ui", "supeepowers", "code-review", "create-project", "doc-writer", "frontend-design", "skill-installer"] # 默认启用编程工作流技能包
 
 # 工作书桌
 desk:

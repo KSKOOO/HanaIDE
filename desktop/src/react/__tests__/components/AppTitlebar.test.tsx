@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import '@testing-library/jest-dom/vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,6 +19,12 @@ vi.mock('../../components/plugin/WidgetButtons', () => ({
 vi.mock('../../components/WindowControls', () => ({
   WindowControls: () => <div data-testid="window-controls" />,
 }));
+
+function cssRule(css: string, selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = css.match(new RegExp(`${escaped}\\s*\\{[\\s\\S]*?\\}`));
+  return match?.[0] ?? '';
+}
 
 describe('AppTitlebar', () => {
   beforeEach(() => {
@@ -79,5 +87,41 @@ describe('AppTitlebar', () => {
     );
 
     expect(screen.getByTitle('preview.toggle')).toHaveClass('active');
+  });
+
+  it('opens titlebar menus and dispatches coding commands from menu items', () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent');
+
+    render(
+      <AppTitlebar
+        sidebarOpen={false}
+        jianOpen={false}
+        onToggleSidebar={vi.fn()}
+        onToggleJian={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'titlebar.menu.file' }));
+    const openFolder = screen.getByRole('menuitem', { name: 'titlebar.menu.openFolder' });
+    fireEvent.click(openFolder);
+
+    expect(dispatchSpy).toHaveBeenCalledWith(expect.objectContaining({
+      type: 'hana:coding-command',
+      detail: { action: 'workspace.openFolder', command: undefined },
+    }));
+  });
+
+  it('keeps titlebar menu panels clickable outside the native drag region', () => {
+    const css = fs.readFileSync(path.join(process.cwd(), 'desktop/src/styles.css'), 'utf8');
+    const panelRule = cssRule(css, '.tb-menu-panel');
+    const itemRule = cssRule(css, '.tb-menu-item');
+    const winMenuRule = cssRule(css, 'html[data-platform="win32"] .tb-menu-bar,\nhtml[data-platform="linux"] .tb-menu-bar');
+
+    expect(panelRule).toMatch(/pointer-events:\s*auto;/);
+    expect(panelRule).toMatch(/-webkit-app-region:\s*no-drag;/);
+    expect(itemRule).toMatch(/pointer-events:\s*auto;/);
+    expect(itemRule).toMatch(/-webkit-app-region:\s*no-drag;/);
+    expect(winMenuRule).toMatch(/overflow:\s*visible;/);
+    expect(winMenuRule).not.toMatch(/overflow:\s*hidden;/);
   });
 });
